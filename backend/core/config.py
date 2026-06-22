@@ -17,9 +17,7 @@ API_VERSION='1.0.0'
 API_DESCRIPTION='analyse resumes against job description using nlp + ml'
 
 ALLOWED_ORIGINS = [
-    "http://localhost:8501",           # ← local development
-    "http://127.0.0.1:8501",          # ← local alternative
-    "https://appapppy-ktwxupi73vqhjzweksze9d.streamlit.app",  # ← production (no trailing slash!)
+    "https://aiatsscorer-as4hlcr6yyfsqwwewicfrw.streamlit.app/",  # ← production 
 ]
 
 #file 
