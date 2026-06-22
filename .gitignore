@@ -1,0 +1,12 @@
+backend/.env
+
+backend/logs/
+*.log
+
+ml_models/
+
+__pycache__/
+*.pyc
+
+.venv/
+venv/
