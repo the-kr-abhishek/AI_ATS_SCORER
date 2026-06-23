@@ -41,7 +41,14 @@ async def analyze_resume(
     
 ):
     warnings: List[str] = []
-
+    
+    # Guard — reject early if models aren't ready yet
+    if not hasattr(request.app.state, "nlp") or \
+       not hasattr(request.app.state, "embedder"):
+        raise HTTPException(
+            status_code=503,
+            detail="Server is still loading models, please retry in a few seconds"
+        )
     
     nlp      = request.app.state.nlp
     embedder = request.app.state.embedder
