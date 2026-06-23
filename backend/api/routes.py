@@ -141,13 +141,13 @@ async def analyze_resume(
     
     return response
 
-@router.get('/health')
+@router.api_route('/health', methods=["GET", "HEAD"])
 async def health_check(request: Request):
     """Health check — confirms models are loaded and the API is ready."""
     return {
         'status':          'healthy',
-        'nlp_loaded':      request.app.state.nlp is not None,
-        'embedder_loaded': request.app.state.embedder is not None,
+        'nlp_loaded':      hasattr(request.app.state, 'nlp') and request.app.state.nlp is not None,
+        'embedder_loaded': hasattr(request.app.state, 'embedder') and request.app.state.embedder is not None,
     }
 
 @router.get('/history')
