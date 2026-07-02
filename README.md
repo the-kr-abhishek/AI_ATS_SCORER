@@ -175,25 +175,19 @@ O --> Q[Save Analysis]
 # 📂 Project Structure
 
 ```text
-AI-ATS-Resume-Analyzer/
+AI_ATS_SCORER/
 │
-├── backend/
-│   ├── api/
-│   ├── services/
-│   ├── database/
-│   ├── models/
-│   ├── utils/
-│   └── main.py
+├── backend/                 # FastAPI backend
+├── frontend/                # Streamlit frontend
+├── docs/
+│   ├── ats_demo.gif         # Demo GIF
+│   └── images/              # README screenshots
 │
-├── frontend/
-│   ├── components/
-│   ├── services/
-│   ├── views/
-│   └── streamlit_main.py
-│
-├── requirements.txt
+├── .gitattributes
+├── .gitignore
 ├── Dockerfile
-└── README.md
+├── README.md
+└── requirements.txt
 ```
 
 ---
