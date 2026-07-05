@@ -32,17 +32,128 @@ def _clean(text: str) -> str:
         text = text.lstrip(prefix)
     return text.strip()
 
+# @router.post('/analyze-resume', response_model=AnalysisResponse)
+# async def analyze_resume(
+#     request: Request,
+#     resume: UploadFile = File(..., description='Resume file — PDF or DOCX, max 5 MB'),
+#     job_description: str = Form('', description='Job description text (optional)'),
+#     user_id: str = Depends(get_current_user),
+    
+# ):
+#     warnings: List[str] = []
+    
+#     # Guard — reject early if models aren't ready yet
+#     if not hasattr(request.app.state, "nlp") or \
+#        not hasattr(request.app.state, "embedder"):
+#         raise HTTPException(
+#             status_code=503,
+#             detail="Server is still loading models, please retry in a few seconds"
+#         )
+    
+#     nlp      = request.app.state.nlp
+#     embedder = request.app.state.embedder
+    
+
+#     try:
+        
+#         file_bytes = await resume.read()
+#         filename   = resume.filename or 'resume'
+        
+#         loop = asyncio.get_event_loop()
+#         resume_text, _metadata = await loop.run_in_executor(
+#            executor, partial(parse_resume_file, file_bytes, filename)
+#         )
+#         logger.info(f"Parsed '{filename}': {len(resume_text)} chars extracted")
+        
+#     except Exception as exc:
+#         logger.error(f'File parsing failed: {exc}')
+#         raise HTTPException(
+#             status_code=422,
+#             detail=f'Could not read or parse the resume: {exc}',
+#         )
+
+#     #Full Analysis Pipeline 
+
+#     try:
+#         from backend.services.resume_analyzer import analyze_full_resume
+        
+#         result = await loop.run_in_executor(
+#             executor, partial(analyze_full_resume,
+#             resume_text=resume_text,
+#             nlp=nlp,
+#             embedder=embedder,
+#             job_description=job_description,
+#             )
+#         )
+#     except Exception as exc:
+#         logger.error(f'Full analysis pipeline failed: {exc}')
+#         raise HTTPException(status_code=500, detail=f'Analysis pipeline failed: {exc}')
+
+#     from backend.models.schemas import ComponentScores
+    
+#     #Extract jd_comparison details
+#     jd_comparison_result = None
+#     if result.get('jd_comparison'):
+#         jd_comparison_result = JDComparison(
+#             match_percentage=round(float(result['jd_comparison'].get('match_percentage', 0.0)), 1),
+#             semantic_similarity=round(float(result['jd_comparison'].get('semantic_similarity', 0.0)), 3),
+#             matched_keywords=result['jd_comparison'].get('matched_keywords', [])[:20],
+#             missing_keywords=result['jd_comparison'].get('missing_keywords', [])[:15],
+#             skills_gap=result['jd_comparison'].get('skills_gap', [])[:10],
+#         )
+
+#     # Convert detailed_feedback objects from prediction into what schema expects
+#     detailed_fb = result.get('detailed_feedback', [])
+    
+    
+#     svd_raw = result.get('skill_validation_details') or {}
+#     skill_val_details = SkillValidationDetails(
+#         validated       = svd_raw.get('validated', []),
+#         unvalidated     = svd_raw.get('unvalidated', []),
+#         total           = svd_raw.get('total', 0),
+#         validated_count = svd_raw.get('validated_count', 0),
+#         validation_pct  = svd_raw.get('validation_pct', 0.0),
+#     )
+    
+#     response = AnalysisResponse(
+#         ATS_score=result['ats_score'],
+#         component_scores=ComponentScores(**result['component_scores']),
+#         issues_summary=result['issues_summary'],
+#         detailed_feedback=detailed_fb,
+#         jd_match_analysis=jd_comparison_result,
+#         skill_validation_details=skill_val_details,
+
+#         # Retro-compatibility fields
+#         ats_score=result['ats_score'],
+#         keyword_match=jd_comparison_result.match_percentage if jd_comparison_result else 0.0,
+#         missing_keywords=result.get('missing_keywords', []),
+#         matched_keywords=result.get('matched_keywords', []),
+#         skills=list(result.get('skills', [])[:20]),
+#         jd_comparison=jd_comparison_result,
+#         interpretation=result.get('interpretation', '')
+#     )
+
+#     try:
+#         from backend.database.supabase_db import save_analysis
+#         await save_analysis(user_id, filename, result)
+#     except Exception as exc:
+#         logger.warning(f'History save failed (non-blocking): {exc}')
+    
+#     return response
+
+import time  # NEW: move this to the top of the file with other imports (not inside the function)
+
 @router.post('/analyze-resume', response_model=AnalysisResponse)
 async def analyze_resume(
     request: Request,
     resume: UploadFile = File(..., description='Resume file — PDF or DOCX, max 5 MB'),
     job_description: str = Form('', description='Job description text (optional)'),
     user_id: str = Depends(get_current_user),
-    
 ):
+    t_start = time.perf_counter()  # NEW: start timer
+
     warnings: List[str] = []
     
-    # Guard — reject early if models aren't ready yet
     if not hasattr(request.app.state, "nlp") or \
        not hasattr(request.app.state, "embedder"):
         raise HTTPException(
@@ -53,9 +164,7 @@ async def analyze_resume(
     nlp      = request.app.state.nlp
     embedder = request.app.state.embedder
     
-
     try:
-        
         file_bytes = await resume.read()
         filename   = resume.filename or 'resume'
         
@@ -71,8 +180,6 @@ async def analyze_resume(
             status_code=422,
             detail=f'Could not read or parse the resume: {exc}',
         )
-
-    #Full Analysis Pipeline 
 
     try:
         from backend.services.resume_analyzer import analyze_full_resume
@@ -91,7 +198,6 @@ async def analyze_resume(
 
     from backend.models.schemas import ComponentScores
     
-    #Extract jd_comparison details
     jd_comparison_result = None
     if result.get('jd_comparison'):
         jd_comparison_result = JDComparison(
@@ -102,9 +208,7 @@ async def analyze_resume(
             skills_gap=result['jd_comparison'].get('skills_gap', [])[:10],
         )
 
-    # Convert detailed_feedback objects from prediction into what schema expects
     detailed_fb = result.get('detailed_feedback', [])
-    
     
     svd_raw = result.get('skill_validation_details') or {}
     skill_val_details = SkillValidationDetails(
@@ -122,8 +226,6 @@ async def analyze_resume(
         detailed_feedback=detailed_fb,
         jd_match_analysis=jd_comparison_result,
         skill_validation_details=skill_val_details,
-
-        # Retro-compatibility fields
         ats_score=result['ats_score'],
         keyword_match=jd_comparison_result.match_percentage if jd_comparison_result else 0.0,
         missing_keywords=result.get('missing_keywords', []),
@@ -138,7 +240,13 @@ async def analyze_resume(
         await save_analysis(user_id, filename, result)
     except Exception as exc:
         logger.warning(f'History save failed (non-blocking): {exc}')
-    
+
+    t_end = time.perf_counter()  # NEW: end timer
+    latency_ms = (t_end - t_start) * 1000  # NEW
+    #logger.info(f"[ANALYZE LATENCY] {latency_ms:.2f} ms")  # NEW
+    print(f"[ANALYZE LATENCY] {latency_ms:.2f} ms")  # CHANGED: print instead of logger.info
+
+
     return response
 
 @router.api_route('/health', methods=["GET", "HEAD"])
