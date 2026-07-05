@@ -1,3 +1,12 @@
+---
+title: AI ATS Scorer
+emoji: 📄
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
 # 🎯 AI ATS Resume Analyzer
 
 An AI-powered ATS Resume Analyzer that evaluates resumes against job descriptions using **LLMs, NLP, and semantic similarity**. Instead of relying only on keyword matching, it combines AI-powered information extraction with explainable scoring to provide actionable feedback, identify skill gaps, and improve ATS compatibility.
